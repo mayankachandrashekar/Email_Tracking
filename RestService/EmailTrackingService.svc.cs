@@ -214,7 +214,9 @@ namespace RestService
             {
                 device = checkRequest();
                 String ipAddress = System.Web.HttpContext.Current.Request.UserHostAddress;//getIPAddress();
-                String timeStamp = new DateTime().ToString();//GetTimestamp(new DateTime());
+                DateTime thisDay = DateTime.Today;
+
+                String timeStamp = thisDay.ToString();//new DateTime().ToString();//GetTimestamp(new DateTime());
                 Boolean unsubscribed = false;
 
 
