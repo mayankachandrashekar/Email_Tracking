@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="RestService.EmailTrackingService" CodeBehind="EmailTrackingService.svc.cs" Factory="System.ServiceModel.Activation.WebServiceHostFactory"%>

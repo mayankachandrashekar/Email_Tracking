@@ -10,17 +10,13 @@ namespace RestService
 {
     // NOTE: You can use the "Rename" command on the "Refactor" menu to change the interface name "IService1" in both code and config file together.
     [ServiceContract]
-    public interface IService1
+    public interface IEmailTrackingService
     {
 
+      
+       
         [OperationContract]
-        string GetData(int value);
-
-        [OperationContract]
-        CompositeType GetDataUsingDataContract(CompositeType composite);
-
-        [OperationContract]
-        String get(String emailId);
+        String get(string emailId, string recipientId);
 
         // TODO: Add your service operations here
     }

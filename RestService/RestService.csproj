@@ -73,7 +73,7 @@
   <ItemGroup>
     <Content Include="COPYING.txt" />
     <Content Include="Global.asax" />
-    <Content Include="Service1.svc" />
+    <Content Include="EmailTrackingService.svc" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -85,13 +85,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\AnaysisStart.cs" />
+    <Compile Include="DeviceInfo.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Service1.svc.cs">
-      <DependentUpon>Service1.svc</DependentUpon>
+    <Compile Include="EmailTrackingService.svc.cs">
+      <DependentUpon>EmailTrackingService.svc</DependentUpon>
     </Compile>
-    <Compile Include="IService1.cs" />
+    <Compile Include="IEmailTrackingService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
