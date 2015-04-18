@@ -466,12 +466,14 @@ namespace RestService
                 int tabletCount = 0;
                 while (reader.Read())
                 {
-                    if (reader[0].ToString().Equals("Mobile"))
+                    if (reader[0].ToString().Contains("Mobile"))
+                    {
                         mobileCount++;
-                    else if (reader[0].ToString().Equals("Mobile-Tablet"))
-                        tabletCount++;
-                    else if (reader[0].ToString().Equals("Mobile-SmartPhone"))
-                        smartPhoneCount++;
+                        if (reader[0].ToString().Equals("Mobile-Tablet"))
+                            tabletCount++;
+                        else if (reader[0].ToString().Equals("Mobile-SmartPhone"))
+                            smartPhoneCount++;
+                    }
                     else if (reader[0].ToString().Equals("PC"))
                         pcCount++;
                 }
