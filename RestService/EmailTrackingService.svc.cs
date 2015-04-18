@@ -167,7 +167,7 @@ namespace RestService
         public String unsubscribe(String receiverId)
         {
 
-            String done = "";
+            //String done = "";
 
             //Declare Connection by passing the connection string from the web config file
             SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["emailReader"].ConnectionString);
@@ -264,6 +264,7 @@ namespace RestService
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
             }
 
 
@@ -422,7 +423,7 @@ namespace RestService
                     subjects[i++] = reader[0].ToString();
                 }
                 conn.Close();
-                return subjects;
+            //    return subjects;
 
 
             }
@@ -437,6 +438,113 @@ namespace RestService
 
 
         }
+
+
+
+       [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "getReadCount/{idEmail}")]
+        public String[] readCount(String idEmail)
+        {
+            String[] readList = new String[4];
+
+            try
+            {
+                //Declare Connection by passing the connection string from the web config file
+                SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["emailReader"].ConnectionString);
+
+                //Open the connection
+                conn.Open();
+                SqlCommand getDeviceList = new SqlCommand("select device_client from receiverDetails where id_email='" + idEmail + "'", conn);
+
+
+                SqlDataReader reader = getDeviceList.ExecuteReader();
+
+
+              //  int i = 0;
+                int mobileCount = 0;
+                int smartPhoneCount = 0;
+                int pcCount = 0;
+                int tabletCount = 0;
+                while (reader.Read())
+                {
+                    if (reader[0].ToString().Equals("Mobile"))
+                        mobileCount++;
+                    else if (reader[0].ToString().Equals("Mobile-Tablet"))
+                        tabletCount++;
+                    else if (reader[0].ToString().Equals("Mobile-SmartPhone"))
+                        smartPhoneCount++;
+                    else if (reader[0].ToString().Equals("PC"))
+                        pcCount++;
+                }
+
+
+                conn.Close();
+                readList[0] = "Mobile-" + mobileCount;
+                readList[1] = "SmartPhone-" + smartPhoneCount;
+                readList[2] = "Tablet-" + tabletCount;
+                readList[3] = "PC-" + pcCount;
+
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            return readList;
+
+        }
+
+
+       [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "getReadCountAll/")]
+       public String[] readEntireCount()
+       {
+           String[] readList = new String[4];
+
+           try
+           {
+               //Declare Connection by passing the connection string from the web config file
+               SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["emailReader"].ConnectionString);
+
+               //Open the connection
+               conn.Open();
+               SqlCommand getDeviceList = new SqlCommand("select device_client from receiverDetails", conn);
+
+
+               SqlDataReader reader = getDeviceList.ExecuteReader();
+
+
+               //  int i = 0;
+               int mobileCount = 0;
+               int smartPhoneCount = 0;
+               int pcCount = 0;
+               int tabletCount = 0;
+               while (reader.Read())
+               {
+                   if (reader[0].ToString().Equals("Mobile"))
+                       mobileCount++;
+                   else if (reader[0].ToString().Equals("Mobile-Tablet"))
+                       tabletCount++;
+                   else if (reader[0].ToString().Equals("Mobile-SmartPhone"))
+                       smartPhoneCount++;
+                   else if (reader[0].ToString().Equals("PC"))
+                       pcCount++;
+               }
+
+
+               conn.Close();
+               readList[0] = "Mobile-" + mobileCount;
+               readList[1] = "SmartPhone-" + smartPhoneCount;
+               readList[2] = "Tablet-" + tabletCount;
+               readList[3] = "PC-" + pcCount;
+
+
+           }
+           catch (Exception e)
+           {
+               Console.WriteLine(e.Message);
+           }
+           return readList;
+
+       }
 
 
     }
