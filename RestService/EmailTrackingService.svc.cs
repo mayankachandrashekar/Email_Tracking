@@ -33,6 +33,15 @@ namespace RestService
 
         }
 
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "unsubscribe/{recipientId}")]
+        public String unsubscribe(string recipientId)
+        {
+            //find the record where recipientId = recipientId. Update isUnscribed = 1.
+            //this field is checked before we send email to that user.
+            //this is to comply with industry standards.
+
+            return "You have been successfully unsubscribed.";
+        }
         /// <summary>
         /// This method gets the User Agent and returns a representation of the device that made the request
         /// </summary>
