@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace RestService
+namespace RestService.App_Start
 {
     public class AnaysisStart
     {
-        public static WURFL.IWURFLManager wurflContainer;
+        
     }
 }
