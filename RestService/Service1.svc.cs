@@ -45,8 +45,8 @@ namespace RestService
 
     //        Console.WriteLine("Received emailId is:" + emailId);
 
-            var mgr = WURFLManagerBuilder.Build(new WURFL.Aspnet.Extensions.Config.ApplicationConfigurer());
-            var device = WURFLManagerBuilder.Instance.GetDeviceForRequest(HttpContext.Current.Request.UserAgent);
+            
+            var device = AnaysisStart.wurflContainer.GetDeviceForRequest(HttpContext.Current.Request.UserAgent);
 
             return device.GetCapability("device_os");
             
