@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="RestService.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="UN" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">umadali444</Value>
+    </Setting>
+    <Setting Name="PW" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">educse5560</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
