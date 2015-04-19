@@ -355,14 +355,16 @@ namespace RestService
                     //create email trace
                     //Declare the sql command
                     SqlCommand cmd = new SqlCommand
-                        ("Insert into emailInfo(email_subject,read_count) values('" + emailSubject + "', 0)", conn);
+                        ("Insert into emailInfo(email_subject,read_count) values('" + emailSubject + "', 0) Set @emailId = @@identity", conn);
 
-                    SqlParameter param = new SqlParameter("@Id", System.Data.SqlDbType.BigInt);
+                    SqlParameter param = new SqlParameter("@emailId", System.Data.SqlDbType.BigInt);
                     param.Direction = System.Data.ParameterDirection.Output;
-
                     cmd.Parameters.Add(param);
+
                     //Execute the insert query
                     cmd.ExecuteNonQuery();
+
+
                     
                     emailId = param.Value as long?; //this will give me the identity field value inserted
 
@@ -417,7 +419,7 @@ namespace RestService
             {
                 //make sure receiver is not unsubscribed initially
                 cmd = new SqlCommand
-               ("Insert into receiverInfo(emailaddress, unsubscribed) values('" + emailAddress + "','0')", conn);
+               ("Insert into receiverInfo(emailaddress, unsubscribed) values('" + emailAddress + "','0')  Set @receiverId = @@identity", conn);
 
                 SqlParameter param = new SqlParameter("@receiverId", System.Data.SqlDbType.BigInt);
                 param.Direction = System.Data.ParameterDirection.Output;
