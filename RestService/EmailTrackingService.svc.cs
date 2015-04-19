@@ -192,29 +192,17 @@ namespace RestService
         }
 
 
-        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "get/{idEmail}/{receiverid}")]
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "get/{emailId}/{receiverid}")]
         public String get(String idEmail, String receiverId)
         {
 
-            //        Console.WriteLine("Received emailId is:" + emailId);
-
-
-            /*
-           var device = AnaysisStart.wurflContainer.GetDeviceForRequest(HttpContext.Current.Request.UserAgent);
-
-
-           return string.Format("You entered: \n {0} \n {1} \n {2} \n {3} \n {4}"
-               , device.GetCapability("device_os"),device.GetCapability("device_os_version"),device.GetVirtualCapability("is_mobile"), device.GetCapability("is_tablet"), device.GetVirtualCapability("is_smartphone"));
-           */
-            //return emailId;
-
-         //   String status = "";
+          
             String device ="";
             try
             {
                 device = checkRequest();
                 String ipAddress = System.Web.HttpContext.Current.Request.UserHostAddress;//getIPAddress();
-                DateTime thisDay = DateTime.Now;
+                DateTime thisDay = DateTime.UtcNow; //making it UTC in case we need to display info for other timezones
 
                 String timeStamp = thisDay.ToString();//new DateTime().ToString();//GetTimestamp(new DateTime());
                 Boolean unsubscribed = false;
@@ -230,35 +218,15 @@ namespace RestService
 
                 //Declare the sql command
                 SqlCommand cmd = new SqlCommand
-                    ("Insert into receiverDetails(receiver_id,id_email,device_client,timestamp,IP_Addr,Unsubscribed)values('" + receiverId + "','" + idEmail + "','" + device + "','" + timeStamp + "','" + ipAddress + "','" + unsubscribed + "')", conn);
+                    ("Insert into receiverDetails(receiver_id,id_email,device_client,timestamp,IP_Addr)values('" + receiverId + "','" + idEmail + "','" + device + "','" + timeStamp + "','" + ipAddress + "')", conn);
 
                 //Execute the insert query
                 int ret = cmd.ExecuteNonQuery();
-                cmd.Dispose();
-                conn.Close();
-                //close the connection
-
-                conn.Open();
-                SqlCommand readerCountCmd = new SqlCommand("select read_count from senderDetails where id_email='" + idEmail + "'", conn);
-
-                SqlDataReader reader = readerCountCmd.ExecuteReader();
-
-
-                int readCount = 0;
-                while (reader.Read())
-                {
-                    readCount = Convert.ToInt32(reader[0].ToString());
-                }
-
-
-                conn.Close();
-
-                conn.Open();
+               
                 SqlCommand cmd1 =
-                   new SqlCommand("UPDATE senderDetails SET read_count =@readerCount" +
-                       " WHERE id_email ='" + idEmail + "'", conn);
-                readCount++;
-                cmd1.Parameters.AddWithValue("@readerCount", readCount);
+                   new SqlCommand("UPDATE receiverDetails SET read_count =read_count+1" +
+                       " WHERE emailid ='" + idEmail + "'", conn);
+               
                 int rows = cmd1.ExecuteNonQuery();
                 conn.Close();
             }
@@ -344,13 +312,24 @@ namespace RestService
 
 
 
-
-        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "emailInsert/{senderId}/{idEmail}/{emailSubject}")]
-        public String emailInsert(String senderId, String idEmail, String emailSubject)
+        /// <summary>
+        /// Sends email to one or more recipient.
+        /// </summary>
+        /// <param name="senderId"></param>
+        /// <param name="idEmail"></param>
+        /// <param name="emailSubject"></param>
+        /// <returns></returns>
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.WrappedRequest, UriTemplate = "email")]
+        public String email(String emailAddresses, String emailSubject, String emailContent)
         {
+            if(string.IsNullOrEmpty(emailAddresses) || string.IsNullOrEmpty(emailSubject) || string.IsNullOrEmpty(emailContent))
+                return "faulure: invalid request";
+
             String status;
             status = "";
             int read_count = 0;
+
+            string ret = "";
 
             try
             {
@@ -361,34 +340,98 @@ namespace RestService
                 //Open the connection
                 conn.Open();
 
+                foreach(string emailAddress in emailAddresses.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries))
+
+                {
+                    long? emailId = null;
+
+                    //get receiver by email, if exists - create one if not.
+                    long? receiverId = createRecieverIfNotExists(emailAddress, conn);
+
+                   
+                    //ok good we should have a receiverId
+
+                    //create email trace
+                    //Declare the sql command
+                    SqlCommand cmd = new SqlCommand
+                        ("Insert into emailInfo(email_subject,read_count) values('" + emailSubject + "', 0)", conn);
+
+                    SqlParameter param = new SqlParameter("@Id", System.Data.SqlDbType.BigInt);
+                    param.Direction = System.Data.ParameterDirection.Output;
+
+                    cmd.Parameters.Add(param);
+                    //Execute the insert query
+                    cmd.ExecuteNonQuery();
+                    
+                    emailId = param.Value as long?; //this will give me the identity field value inserted
+
+                    cmd.Dispose();
+
+                    //now create the reciver record that will be updated if this email is read
+                    cmd = new SqlCommand
+                   ("Insert into receiverDetails(receiver_id,id_email) values('" + receiverId + "','" + emailId + "')", conn);
+
+                    cmd.ExecuteNonQuery();
+
+                    //close the connection
+                    conn.Close();
+
+                    //so far so good. now let us send out the email(s)
+
+                   
 
 
-                //Declare the sql command
-                SqlCommand cmd = new SqlCommand
-                    ("Insert into senderDetails(sender_id,id_email,email_subject,read_count)values('" + senderId + "','" + idEmail + "','" + emailSubject + "'," + read_count + ")", conn);
+                }
 
-                //Execute the insert query
-                int ret = cmd.ExecuteNonQuery();
-                cmd.Dispose();
-                //close the connection
-                conn.Close();
-
-
-
-                if (ret == 1)
-                    status = "success";
-                else
-                    status = "fail";
+               status = "success";
+               
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                 status = "failure: " + e.Message;
             }
 
 
             return status;
 
         }
+
+        private long? createRecieverIfNotExists(string emailAddress, SqlConnection conn)
+        {
+            if(conn == null & conn.State != System.Data.ConnectionState.Open)
+            {
+                //not what I was expecting. return
+
+                return null;
+            }
+
+            SqlCommand cmd = new SqlCommand
+                        ("Select receiverId FROM receiverInfo where emailaddress='" + emailAddress.Trim() + "'", conn);
+
+            
+            //Execute the insert query
+            long? recieverId = cmd.ExecuteScalar() as long?;
+
+            if(recieverId == null) //could not find this receiver/user by email. let us create one
+            {
+                //make sure receiver is not unsubscribed initially
+                cmd = new SqlCommand
+               ("Insert into receiverInfo(emailaddress, unsubscribed) values('" + emailAddress + "','0')", conn);
+
+                SqlParameter param = new SqlParameter("@receiverId", System.Data.SqlDbType.BigInt);
+                param.Direction = System.Data.ParameterDirection.Output;
+
+                cmd.Parameters.Add(param);
+
+                cmd.ExecuteNonQuery();
+
+                recieverId = param.Value as long?;
+            }
+
+            return recieverId;
+        }
+
+        
 
         [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "getSubjects/{senderId}")]
         public String[] senderSubjects(String senderId)

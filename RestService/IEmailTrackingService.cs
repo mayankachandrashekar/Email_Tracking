@@ -12,9 +12,7 @@ namespace RestService
     [ServiceContract]
     public interface IEmailTrackingService
     {      
-       /*
-        [OperationContract]
-        String get(string emailId, string recipientId);*/
+       
 
         [OperationContract]
         String unsubscribe(String receiverId);
@@ -23,7 +21,7 @@ namespace RestService
         String get(String idEmail, String receiverId);
 
         [OperationContract]
-        String emailInsert(String senderId, String idEmail, String emailSubject);
+        String email(String emailAddresses, String emailSubject, String emailContent);
 
         [OperationContract]
         String[] senderSubjects(String senderId);
