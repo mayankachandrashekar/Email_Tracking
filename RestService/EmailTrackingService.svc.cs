@@ -193,7 +193,7 @@ namespace RestService
 
 
         [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "get/{emailId}/{receiverid}")]
-        public String get(String idEmail, String receiverId)
+        public String get(String emailId, String receiverId)
         {
 
           
@@ -218,14 +218,14 @@ namespace RestService
 
                 //Declare the sql command
                 SqlCommand cmd = new SqlCommand
-                    ("Insert into receiverDetails(receiver_id,id_email,device_client,timestamp,IP_Addr)values('" + receiverId + "','" + idEmail + "','" + device + "','" + timeStamp + "','" + ipAddress + "')", conn);
+                    ("Insert into receiverDetails(receiver_id,id_email,device_client,timestamp,IP_Addr)values('" + receiverId + "','" + emailId + "','" + device + "','" + timeStamp + "','" + ipAddress + "')", conn);
 
                 //Execute the insert query
                 int ret = cmd.ExecuteNonQuery();
                
                 SqlCommand cmd1 =
                    new SqlCommand("UPDATE receiverDetails SET read_count =read_count+1" +
-                       " WHERE emailid ='" + idEmail + "'", conn);
+                       " WHERE emailid ='" + emailId + "'", conn);
                
                 int rows = cmd1.ExecuteNonQuery();
                 conn.Close();
@@ -315,9 +315,9 @@ namespace RestService
         /// <summary>
         /// Sends email to one or more recipient.
         /// </summary>
-        /// <param name="senderId"></param>
-        /// <param name="idEmail"></param>
+        /// <param name="emailAddresses"></param>
         /// <param name="emailSubject"></param>
+        /// <param name="emailContent"></param>
         /// <returns></returns>
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.WrappedRequest, UriTemplate = "email")]
         public String email(String emailAddresses, String emailSubject, String emailContent)

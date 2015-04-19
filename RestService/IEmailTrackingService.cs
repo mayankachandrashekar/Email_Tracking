@@ -18,7 +18,7 @@ namespace RestService
         String unsubscribe(String receiverId);
 
         [OperationContract]
-        String get(String idEmail, String receiverId);
+        String get(String emailId, String receiverId);
 
         [OperationContract]
         String email(String emailAddresses, String emailSubject, String emailContent);
