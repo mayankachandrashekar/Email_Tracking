@@ -180,7 +180,7 @@ namespace RestService
 
              SqlCommand cmd1 =
                    new SqlCommand("UPDATE receiverDetails SET Unsubscribed =@unsubscribe" +
-                       " WHERE receiver_id ='" + receiverId + "'", conn);
+                       " WHERE receiverid ='" + receiverId + "'", conn);
                 
                 cmd1.Parameters.AddWithValue("@unsubscribe", unsubscribe);
                 int rows = cmd1.ExecuteNonQuery();
@@ -218,13 +218,13 @@ namespace RestService
 
                 //Declare the sql command
                 SqlCommand cmd = new SqlCommand
-                    ("Insert into receiverDetails(receiver_id,id_email,device_client,timestamp,IP_Addr)values('" + receiverId + "','" + emailId + "','" + device + "','" + timeStamp + "','" + ipAddress + "')", conn);
+                    ("Insert into receiverDetails(receiverid,emailid,device_client,timestamp,IP_Addr)values('" + receiverId + "','" + emailId + "','" + device + "','" + timeStamp + "','" + ipAddress + "')", conn);
 
                 //Execute the insert query
                 int ret = cmd.ExecuteNonQuery();
                
                 SqlCommand cmd1 =
-                   new SqlCommand("UPDATE receiverDetails SET read_count =read_count+1" +
+                   new SqlCommand("UPDATE emailInfo SET read_count =read_count+1" +
                        " WHERE emailid ='" + emailId + "'", conn);
                
                 int rows = cmd1.ExecuteNonQuery();
@@ -322,6 +322,7 @@ namespace RestService
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.WrappedRequest, UriTemplate = "email")]
         public String email(String emailAddresses, String emailSubject, String emailContent)
         {
+            
             if(string.IsNullOrEmpty(emailAddresses) || string.IsNullOrEmpty(emailSubject) || string.IsNullOrEmpty(emailContent))
                 return "faulure: invalid request";
 
@@ -369,7 +370,7 @@ namespace RestService
 
                     //now create the reciver record that will be updated if this email is read
                     cmd = new SqlCommand
-                   ("Insert into receiverDetails(receiver_id,id_email) values('" + receiverId + "','" + emailId + "')", conn);
+                   ("Insert into receiverDetails(receiverid,emailid) values('" + receiverId + "','" + emailId + "')", conn);
 
                     cmd.ExecuteNonQuery();
 
@@ -378,8 +379,8 @@ namespace RestService
 
                     //so far so good. now let us send out the email(s)
 
-                   
 
+                    Util.SendMail(emailAddresses, emailSubject, emailContent, emailId.Value, receiverId.Value);
 
                 }
 
@@ -391,7 +392,7 @@ namespace RestService
                  status = "failure: " + e.Message;
             }
 
-
+            
             return status;
 
         }
@@ -496,7 +497,7 @@ namespace RestService
 
                 //Open the connection
                 conn.Open();
-                SqlCommand getDeviceList = new SqlCommand("select device_client from receiverDetails where id_email='" + idEmail + "'", conn);
+                SqlCommand getDeviceList = new SqlCommand("select device_client from receiverDetails where emailid='" + idEmail + "'", conn);
 
 
                 SqlDataReader reader = getDeviceList.ExecuteReader();
