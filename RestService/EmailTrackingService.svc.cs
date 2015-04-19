@@ -198,9 +198,12 @@ namespace RestService
 
           
             String device ="";
+            DeviceInfo deviceInfo;
             try
             {
                 device = checkRequest();
+                deviceInfo = getDeviceFromRequest(System.Web.HttpContext.Current.Request.UserAgent);
+
                 String ipAddress = System.Web.HttpContext.Current.Request.UserHostAddress;//getIPAddress();
                 DateTime thisDay = DateTime.UtcNow; //making it UTC in case we need to display info for other timezones
 
@@ -218,7 +221,7 @@ namespace RestService
 
                 //Declare the sql command
                 SqlCommand cmd = new SqlCommand
-                    ("Insert into receiverDetails(receiverid,emailid,device_client,timestamp,IP_Addr)values('" + receiverId + "','" + emailId + "','" + device + "','" + timeStamp + "','" + ipAddress + "')", conn);
+                    ("Insert into receiverDetails(receiverid,emailid,device_client,timestamp,IP_Addr, isMobile, isSmartPhone, isTablet, isDeskTop)values('" + receiverId + "','" + emailId + "','" + device + "','" + timeStamp + "','" + ipAddress + "','" + deviceInfo.isMobile + "','" + deviceInfo.isSmartPhone + "','" + deviceInfo.isTablet + "','" + deviceInfo.isDesktop + "')", conn);
 
                 //Execute the insert query
                 int ret = cmd.ExecuteNonQuery();
@@ -261,6 +264,41 @@ namespace RestService
             }
 
             return context.Request.ServerVariables["REMOTE_ADDR"];
+        }
+
+        public DeviceInfo getDeviceInfo()
+        {
+            DeviceInfo dInfo = new DeviceInfo();
+
+            // String request = "";
+            var device = AnaysisStart.wurflContainer.GetDeviceForRequest(HttpContext.Current.Request.UserAgent);
+
+            String is_mobile;
+            String is_smartphone;
+            String is_tablet;
+
+            is_mobile = device.GetVirtualCapability("is_mobile");
+            is_smartphone = device.GetVirtualCapability("is_smartphone");
+            is_tablet = device.GetCapability("is_tablet");
+
+            if (is_mobile.Equals("true"))
+            {
+                dInfo.isMobile = true;
+            }
+            
+            if (is_smartphone.Equals("true"))
+            {
+                dInfo.isMobile = true;
+                dInfo.isSmartPhone = true;
+            }
+            
+            if (is_tablet.Equals("true"))
+            {
+                dInfo.isMobile = true;
+                dInfo.isTablet = true;
+            }
+
+            return dInfo;
         }
 
         public String checkRequest()
@@ -322,8 +360,8 @@ namespace RestService
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.WrappedRequest, UriTemplate = "email")]
         public String email(String emailAddresses, String emailSubject, String emailContent)
         {
-            
-            if(string.IsNullOrEmpty(emailAddresses) || string.IsNullOrEmpty(emailSubject) || string.IsNullOrEmpty(emailContent))
+
+            if (string.IsNullOrEmpty(emailAddresses) || string.IsNullOrEmpty(emailSubject) || string.IsNullOrEmpty(emailContent))
                 return "faulure: invalid request";
 
             String status;
@@ -341,60 +379,58 @@ namespace RestService
                 //Open the connection
                 conn.Open();
 
-                foreach(string emailAddress in emailAddresses.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries))
+                long? emailId = null;
 
+                //create email trace
+                //Declare the sql command
+                SqlCommand cmd = new SqlCommand
+                    ("Insert into emailInfo(email_subject,read_count) values('" + emailSubject + "', 0) Set @emailId = @@identity", conn);
+
+                SqlParameter param = new SqlParameter("@emailId", System.Data.SqlDbType.BigInt);
+                param.Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.Add(param);
+
+                //Execute the insert query
+                cmd.ExecuteNonQuery();
+
+
+
+                emailId = param.Value as long?; //this will give me the identity field value inserted
+
+                cmd.Dispose();
+
+                foreach (string emailAddress in emailAddresses.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    long? emailId = null;
+
 
                     //get receiver by email, if exists - create one if not.
                     long? receiverId = createRecieverIfNotExists(emailAddress, conn);
 
-                   
+
                     //ok good we should have a receiverId
 
-                    //create email trace
-                    //Declare the sql command
-                    SqlCommand cmd = new SqlCommand
-                        ("Insert into emailInfo(email_subject,read_count) values('" + emailSubject + "', 0) Set @emailId = @@identity", conn);
-
-                    SqlParameter param = new SqlParameter("@emailId", System.Data.SqlDbType.BigInt);
-                    param.Direction = System.Data.ParameterDirection.Output;
-                    cmd.Parameters.Add(param);
-
-                    //Execute the insert query
-                    cmd.ExecuteNonQuery();
 
 
-                    
-                    emailId = param.Value as long?; //this will give me the identity field value inserted
-
-                    cmd.Dispose();
-
-                    //now create the reciver record that will be updated if this email is read
-                    cmd = new SqlCommand
-                   ("Insert into receiverDetails(receiverid,emailid) values('" + receiverId + "','" + emailId + "')", conn);
-
-                    cmd.ExecuteNonQuery();
-
-                    //close the connection
-                    conn.Close();
 
                     //so far so good. now let us send out the email(s)
 
 
-                    Util.SendMail(emailAddresses, emailSubject, emailContent, emailId.Value, receiverId.Value);
+                    if (Util.SendMail(emailAddresses, emailSubject, emailContent, emailId.Value, receiverId.Value))
+                    {
+                        return "Successfuly sent message";
+                    }
 
                 }
 
-               status = "success";
-               
+                status = "success";
+
             }
             catch (Exception e)
             {
-                 status = "failure: " + e.Message;
+                status = "failure: " + e.Message;
             }
 
-            
+
             return status;
 
         }
@@ -436,10 +472,10 @@ namespace RestService
 
         
 
-        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "getSubjects/{senderId}")]
-        public String[] senderSubjects(String senderId)
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "subjectStats")]
+        public List<String> subjectStats()
         {
-            String[] subjects = { "" };
+            List<String> result = new List<string>();
 
             try
             {
@@ -448,29 +484,21 @@ namespace RestService
 
                 //Open the connection
                 conn.Open();
-                SqlCommand getSubjectCountCmd = new SqlCommand("select count (email_subject) from senderDetails where sender_id='" + senderId + "'", conn);
+                SqlCommand getSubjectCountCmd = new SqlCommand("select sum(read_count) read_count, email_subject from emailInfo group by email_subject", conn);
 
-                int subjectsCount = Convert.ToInt16(getSubjectCountCmd.ExecuteScalar().ToString());
+                SqlDataReader reader = getSubjectCountCmd.ExecuteReader();
+                //int subjectsCount = Convert.ToInt16(getSubjectCountCmd.ExecuteScalar().ToString());
 
-
-
-                subjects = new String[subjectsCount];
-
-
-
-                SqlCommand getSubjectCmd = new SqlCommand("select email_subject from senderDetails where sender_id='" + senderId + "'", conn);
-
-                SqlDataReader reader = getSubjectCmd.ExecuteReader();
-
-
-                int i = 0;
                 while (reader.Read())
                 {
-                    subjects[i++] = reader[0].ToString();
+                   result.Add(reader["email_subject"].ToString() +"="+ reader["read_count"].ToString());
+                   
                 }
-                conn.Close();
-            //    return subjects;
 
+
+                
+                conn.Close();
+            
 
             }
             catch (Exception e)
@@ -480,7 +508,7 @@ namespace RestService
 
 
 
-            return subjects;
+            return result;
 
 
         }

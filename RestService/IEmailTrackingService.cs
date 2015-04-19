@@ -24,7 +24,13 @@ namespace RestService
         String email(String emailAddresses, String emailSubject, String emailContent);
 
         [OperationContract]
-        String[] senderSubjects(String senderId);
+        List<String> subjectStats();
+
+        [OperationContract]
+        String[] readEntireCount();
+
+        [OperationContract]
+        String[] readCount(String idEmail);
 
        
     }
