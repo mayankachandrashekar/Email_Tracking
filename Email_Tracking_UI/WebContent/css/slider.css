@@ -1,0 +1,15 @@
+/*SLIDER CSS START*/
+.track { -moz-user-select: none; -webkit-user-select: none; }
+.track-center{ background-image: url(track.png); height: 44px; margin: 0px 10px; }
+.track-left{ width: 10px; height: 44px; float: left; background-image: url(trackleft.png); }
+.track-right{ width: 10px; height: 44px; float: right; background-image: url(trackright.png); }
+.track-message{ color:#8c8c8c; font-family:Arial,Helvetica,sans-serif; font-size:22px; padding:9px 18px; text-align:right; }
+.handle{ background-image: url(handles.png); bottom:45px; cursor:pointer; height:40px; margin:3px 4px; position:relative; width:60px; }
+/*SLIDER CSS END*/
+
+#send {
+    width: 240px;
+    height: 45px;
+    float: left;
+    padding-bottom: 20px;
+}
