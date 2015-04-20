@@ -1,0 +1,84 @@
+  <head>
+  
+    <script type="text/javascript">
+    function send(){
+    	
+    var emailaddresses = document.getElementById("emailTo").value;
+	var emailsubject=document.getElementById("subject").value;
+	var emailcontent=document.getElementById("message").value;
+	var pos=" ";
+//	var full_post=pos.concat("{\"emailAddresses\":\"",emailaddresses,"\",\"emailSubject\":\"",emailsubject,"\",\"emailContent\":\"",emailcontent,"\"}");
+	var full_post=pos.concat("{emailAddresses:\"",emailaddresses,"\",emailSubject:\"",emailsubject,"\",emailContent:\"",emailcontent,"\"}");
+	/* $.post("http://kc-sce-cs551-2.kc.umkc.edu/aspnet_client/qwer/RestService/EmailTrackingService.svc/email",
+			datatype: "json"
+			{
+			emailAddresses: "mckw9@mail.umkc.edu",
+			emailSubject: "hi",
+			emailContent: "data"
+		    },
+	          function(data) {
+	      
+	              console.log(data);
+	          }
+	  ); */
+	$.ajax({
+        url: 'http://kc-sce-cs551-2.kc.umkc.edu/aspnet_client/qwer/RestService/EmailTrackingService.svc/email',
+        type: 'POST',
+        data: {
+			emailAddresses: "mckw9@mail.umkc.edu",
+			emailSubject: "hi",
+			emailContent: "data"
+		    } ,
+        contentType: 'application/json; charset=utf-8',
+        success: function (response) {
+            //your success code
+            console.log(response);
+        },
+        error: function () {
+            //your error code
+        }
+    }); 
+    }
+    </script>
+   <!--  <script type="text/javascript" src="js/controllers/query0Ctrl.js"></script> -->
+  </head>
+<div>
+    <div class="row content">
+        <div class="col-lg-12">
+            <div id="container" style="min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto">
+            <form method="POST" accept-charset="UTF-8" class="form-horizontal" id="sendEmailForm"><input name="_token" type="hidden" value="YmQhWbQgaSX7Dhj3FEunL7wX3JqH6QI0EDwAqaXG">                <div class="form-group">
+                    <label for="emailTo" class="col-sm-3 control-label">To:</label>
+                    <div class="col-sm-9">
+                        <input class="form-control" placeholder="example@gmail.com" name="emailTo" type="email" id="emailTo">                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="subject" class="col-sm-3 control-label">Subject:</label>
+                    <div class="col-sm-9">
+                        <input class="form-control" placeholder="subject" name="subject" type="text" id="subject">                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="message" class="col-sm-3 control-label">Message:</label>
+                    <div class="col-sm-9">
+                        <textarea class="form-control" rows="8" name="message" cols="50" id="message"></textarea>                    </div>
+                </div>
+                
+                <div class="form-group">
+                
+                <label class="col-sm-3 control-label gray"></label>
+                 <!-- <div class="col-sm-9">
+                    <button type="button" class="btn btn-primary">Send</button>
+                </div> -->
+					<div>                
+                        <!-- <button class="btn btn-primary" onclick="buttonFunction()"><i class="fa fa-fw fa-paper-plane"></i> Send</button> -->
+                    	<button onclick="send()"> Send</button>
+                    </div>
+                </div>
+                
+  </form>
+
+            </div>
+        </div>
+    </div>
+    <!-- /.row -->
+
+</div>
