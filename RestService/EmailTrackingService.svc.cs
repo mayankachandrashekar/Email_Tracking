@@ -179,7 +179,7 @@ namespace RestService
 
 
              SqlCommand cmd1 =
-                   new SqlCommand("UPDATE receiverDetails SET Unsubscribed =@unsubscribe" +
+                   new SqlCommand("UPDATE receiverInfo SET Unsubscribed =@unsubscribe" +
                        " WHERE receiverid ='" + receiverId + "'", conn);
                 
                 cmd1.Parameters.AddWithValue("@unsubscribe", unsubscribe);
@@ -357,9 +357,13 @@ namespace RestService
         /// <param name="emailSubject"></param>
         /// <param name="emailContent"></param>
         /// <returns></returns>
-        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.WrappedRequest, UriTemplate = "email")]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.WrappedRequest, ResponseFormat=WebMessageFormat.Json, UriTemplate = "email")]
         public String email(String emailAddresses, String emailSubject, String emailContent)
         {
+            if (Util.SendMail(emailAddresses, emailSubject, emailContent, 12, 5))
+            {
+                return "Successfuly sent message";
+            }
 
             if (string.IsNullOrEmpty(emailAddresses) || string.IsNullOrEmpty(emailSubject) || string.IsNullOrEmpty(emailContent))
                 return "faulure: invalid request";
@@ -406,11 +410,15 @@ namespace RestService
                     //get receiver by email, if exists - create one if not.
                     long? receiverId = createRecieverIfNotExists(emailAddress, conn);
 
+                    if(receiverId == -1) //must have subscribed it.
+                    {
+                        if (emailAddresses.Split(new char[] { ',' }).Count() > 1)
+                            return "This reciever has unsubscribed";
 
-                    //ok good we should have a receiverId
+                        //anyway continue
 
-
-
+                        continue;
+                    }
 
                     //so far so good. now let us send out the email(s)
 
@@ -437,15 +445,10 @@ namespace RestService
 
         private long? createRecieverIfNotExists(string emailAddress, SqlConnection conn)
         {
-            if(conn == null & conn.State != System.Data.ConnectionState.Open)
-            {
-                //not what I was expecting. return
-
-                return null;
-            }
-
+           
+            //do not send email to unsubscribed users
             SqlCommand cmd = new SqlCommand
-                        ("Select receiverId FROM receiverInfo where emailaddress='" + emailAddress.Trim() + "'", conn);
+                        ("Select CASE WHEN unsubscribed = 1 THEN -1 ELSE  receiverId END receiverId FROM receiverInfo where emailaddress='" + emailAddress.Trim() + "'", conn);
 
             
             //Execute the insert query
@@ -513,7 +516,51 @@ namespace RestService
 
         }
 
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "topReaders")]
+        public List<String> topReaders()
+        {
+            List<String> result = new List<string>();
 
+            try
+            {
+                //Declare Connection by passing the connection string from the web config file
+                SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["emailReader"].ConnectionString);
+
+                //Open the connection
+                conn.Open();
+                SqlCommand getSubjectCountCmd = new SqlCommand(@"
+select top 5 emailAddress,COUNT(*) reads  from receiverInfo r
+join receiverDetails rd on rd.receiverId=r.receiverId
+
+group by emailAddress
+order by COUNT(*) desc", conn);
+
+                SqlDataReader reader = getSubjectCountCmd.ExecuteReader();
+                //int subjectsCount = Convert.ToInt16(getSubjectCountCmd.ExecuteScalar().ToString());
+
+                while (reader.Read())
+                {
+                    result.Add(reader["emailAddress"].ToString() + "=" + reader["reads"].ToString());
+
+                }
+
+
+
+                conn.Close();
+
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+
+
+            return result;
+
+
+        }
 
        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, UriTemplate = "getReadCount/{idEmail}")]
         public String[] readCount(String idEmail)
@@ -595,12 +642,14 @@ namespace RestService
                int tabletCount = 0;
                while (reader.Read())
                {
-                   if (reader[0].ToString().Equals("Mobile"))
+                   if (reader[0].ToString().Contains("Mobile"))
+                   {
                        mobileCount++;
-                   else if (reader[0].ToString().Equals("Mobile-Tablet"))
-                       tabletCount++;
-                   else if (reader[0].ToString().Equals("Mobile-SmartPhone"))
-                       smartPhoneCount++;
+                       if (reader[0].ToString().Equals("Mobile-Tablet"))
+                           tabletCount++;
+                       else if (reader[0].ToString().Equals("Mobile-SmartPhone"))
+                           smartPhoneCount++;
+                   }
                    else if (reader[0].ToString().Equals("PC"))
                        pcCount++;
                }

@@ -32,6 +32,9 @@ namespace RestService
         [OperationContract]
         String[] readCount(String idEmail);
 
+        [OperationContract]
+        List<String> topReaders();
+       
        
     }
     
